@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ImagePlus, X } from 'lucide-react'
 import { db, type ImageAsset } from '@/db'
+import { prepareImageForStorage } from '@/lib/imageProcessing'
 
 function Thumb({
   image,
@@ -59,7 +60,8 @@ export function ImageGallery({ projectId, imageIds, onChange, readOnly = false }
     if (!files || files.length === 0 || !onChange) return
     const newIds: number[] = []
     for (const file of Array.from(files)) {
-      const id = await db.images.add({ projectId, name: file.name, mimeType: file.type, blob: file })
+      const blob = await prepareImageForStorage(file)
+      const id = await db.images.add({ projectId, name: file.name, mimeType: blob.type || file.type, blob })
       newIds.push(id)
     }
     onChange([...imageIds, ...newIds])
