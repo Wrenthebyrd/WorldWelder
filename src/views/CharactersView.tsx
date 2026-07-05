@@ -4,9 +4,11 @@ import { ArrowLeft, Users, Plus, Trash2, X, Sparkle } from 'lucide-react'
 import { db, type Character, type Ability } from '@/db'
 import { InlineEditable } from '@/components/common/InlineEditable'
 import { SectionList } from '@/components/common/SectionList'
+import { SectionListView } from '@/components/common/SectionListView'
 import { ImageGallery } from '@/components/common/ImageGallery'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { ModeToggle, type ViewMode } from '@/components/common/ModeToggle'
 
 function CharacterThumb({ character, active, onClick }: { character: Character; active: boolean; onClick: () => void }) {
   const cover = useLiveQuery(async () => {
@@ -49,6 +51,7 @@ export function CharactersView({ projectId }: { projectId: number }) {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [deleting, setDeleting] = useState<Character | null>(null)
   const [traitDraft, setTraitDraft] = useState('')
+  const [mode, setMode] = useState<ViewMode>('edit')
 
   const selected = characters.find((c) => c.id === selectedId) ?? null
 
@@ -135,116 +138,166 @@ export function CharactersView({ projectId }: { projectId: number }) {
             >
               <ArrowLeft size={13} /> Back to characters
             </button>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <InlineEditable
-                  value={selected.name}
-                  onSave={(v) => patch({ name: v })}
-                  className="font-display text-2xl text-ink"
-                  placeholder="Unnamed character"
-                />
-                <InlineEditable
-                  value={selected.role}
-                  onSave={(v) => patch({ role: v })}
-                  className="text-sm text-ink-dim mt-1"
-                  placeholder="Role — e.g. Protagonist, Mentor, Antagonist"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setDeleting(selected)}
-                className="text-ink-dim hover:text-red-400 transition-colors p-1.5"
-                title="Delete character"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-
-            <label className="block text-xs text-ink-dim mb-1.5">Aliases</label>
-            <input
-              value={selected.aliases}
-              onChange={(e) => patch({ aliases: e.target.value })}
-              placeholder="Also known as…"
-              className="w-full mb-5 bg-bg-elevated border border-panel-border rounded-xl px-3 py-2 text-sm outline-none focus:border-accent-a transition-colors"
-            />
-
-            <label className="block text-xs text-ink-dim mb-1.5">Portraits</label>
-            <div className="mb-6">
-              <ImageGallery
-                projectId={projectId}
-                imageIds={selected.imageIds}
-                onChange={(ids) => patch({ imageIds: ids })}
-              />
-            </div>
-
-            <label className="block text-xs text-ink-dim mb-1.5">Traits</label>
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {selected.traits.map((t, i) => (
-                <span
-                  key={i}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-accent-b/15 text-accent-b"
-                >
-                  {t}
-                  <button onClick={() => removeTrait(i)} className="hover:text-red-400">
-                    <X size={10} />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2 mb-6">
-              <input
-                value={traitDraft}
-                onChange={(e) => setTraitDraft(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTrait())}
-                placeholder="Add a trait and press Enter"
-                className="flex-1 bg-bg-elevated border border-panel-border rounded-xl px-3 py-1.5 text-xs outline-none focus:border-accent-a transition-colors"
-              />
-            </div>
-
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs text-ink-dim">Abilities</label>
-              <button
-                onClick={() => patch({ abilities: [...selected.abilities, { name: '', description: '' }] })}
-                className="text-xs text-accent-a flex items-center gap-1 hover:opacity-80"
-              >
-                <Plus size={12} /> Add ability
-              </button>
-            </div>
-            <div className="flex flex-col gap-2 mb-6">
-              {selected.abilities.length === 0 && (
-                <p className="text-xs text-ink-dim italic">No abilities recorded.</p>
-              )}
-              {selected.abilities.map((a, i) => (
-                <div key={i} className="glass rounded-xl p-3 flex gap-2 items-start">
-                  <Sparkle size={14} className="text-accent-c mt-2 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <input
-                      value={a.name}
-                      onChange={(e) => updateAbility(i, { ...a, name: e.target.value })}
-                      placeholder="Ability name"
-                      className="w-full bg-transparent text-sm font-medium outline-none mb-1 text-ink"
+            {mode === 'edit' ? (
+              <>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <InlineEditable
+                      value={selected.name}
+                      onSave={(v) => patch({ name: v })}
+                      className="font-display text-2xl text-ink"
+                      placeholder="Unnamed character"
                     />
-                    <textarea
-                      value={a.description}
-                      onChange={(e) => updateAbility(i, { ...a, description: e.target.value })}
-                      placeholder="What can they do?"
-                      rows={2}
-                      className="w-full bg-transparent text-xs outline-none resize-none text-ink-dim"
+                    <InlineEditable
+                      value={selected.role}
+                      onSave={(v) => patch({ role: v })}
+                      className="text-sm text-ink-dim mt-1"
+                      placeholder="Role — e.g. Protagonist, Mentor, Antagonist"
                     />
                   </div>
-                  <button onClick={() => removeAbility(i)} className="text-ink-dim hover:text-red-400 shrink-0">
-                    <Trash2 size={13} />
+                  <div className="flex items-center gap-1 shrink-0">
+                    <ModeToggle mode={mode} setMode={setMode} />
+                    <button
+                      type="button"
+                      onClick={() => setDeleting(selected)}
+                      className="text-ink-dim hover:text-red-400 transition-colors p-1.5"
+                      title="Delete character"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <label className="block text-xs text-ink-dim mb-1.5">Aliases</label>
+                <input
+                  value={selected.aliases}
+                  onChange={(e) => patch({ aliases: e.target.value })}
+                  placeholder="Also known as…"
+                  className="w-full mb-5 bg-bg-elevated border border-panel-border rounded-xl px-3 py-2 text-sm outline-none focus:border-accent-a transition-colors"
+                />
+
+                <label className="block text-xs text-ink-dim mb-1.5">Portraits</label>
+                <div className="mb-6">
+                  <ImageGallery
+                    projectId={projectId}
+                    imageIds={selected.imageIds}
+                    onChange={(ids) => patch({ imageIds: ids })}
+                  />
+                </div>
+
+                <label className="block text-xs text-ink-dim mb-1.5">Traits</label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {selected.traits.map((t, i) => (
+                    <span
+                      key={i}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-accent-b/15 text-accent-b"
+                    >
+                      {t}
+                      <button onClick={() => removeTrait(i)} className="hover:text-red-400">
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2 mb-6">
+                  <input
+                    value={traitDraft}
+                    onChange={(e) => setTraitDraft(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTrait())}
+                    placeholder="Add a trait and press Enter"
+                    className="flex-1 bg-bg-elevated border border-panel-border rounded-xl px-3 py-1.5 text-xs outline-none focus:border-accent-a transition-colors"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs text-ink-dim">Abilities</label>
+                  <button
+                    onClick={() => patch({ abilities: [...selected.abilities, { name: '', description: '' }] })}
+                    className="text-xs text-accent-a flex items-center gap-1 hover:opacity-80"
+                  >
+                    <Plus size={12} /> Add ability
                   </button>
                 </div>
-              ))}
-            </div>
+                <div className="flex flex-col gap-2 mb-6">
+                  {selected.abilities.length === 0 && (
+                    <p className="text-xs text-ink-dim italic">No abilities recorded.</p>
+                  )}
+                  {selected.abilities.map((a, i) => (
+                    <div key={i} className="glass rounded-xl p-3 flex gap-2 items-start">
+                      <Sparkle size={14} className="text-accent-c mt-2 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <input
+                          value={a.name}
+                          onChange={(e) => updateAbility(i, { ...a, name: e.target.value })}
+                          placeholder="Ability name"
+                          className="w-full bg-transparent text-sm font-medium outline-none mb-1 text-ink"
+                        />
+                        <textarea
+                          value={a.description}
+                          onChange={(e) => updateAbility(i, { ...a, description: e.target.value })}
+                          placeholder="What can they do?"
+                          rows={2}
+                          className="w-full bg-transparent text-xs outline-none resize-none text-ink-dim"
+                        />
+                      </div>
+                      <button onClick={() => removeAbility(i)} className="text-ink-dim hover:text-red-400 shrink-0">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
 
-            <label className="block text-xs text-ink-dim mb-1.5">Profile sections</label>
-            <SectionList
-              sections={selected.sections}
-              onChange={(sections) => patch({ sections })}
-              addLabel="Add section"
-            />
+                <label className="block text-xs text-ink-dim mb-1.5">Profile sections</label>
+                <SectionList
+                  sections={selected.sections}
+                  onChange={(sections) => patch({ sections })}
+                  addLabel="Add section"
+                />
+              </>
+            ) : (
+              <div className="glass rounded-2xl p-6 md:p-10">
+                <div className="flex justify-end mb-2">
+                  <ModeToggle mode={mode} setMode={setMode} />
+                </div>
+                {selected.aliases && (
+                  <p className="text-center text-xs text-ink-dim mb-1">aka {selected.aliases}</p>
+                )}
+                <h1 className="font-display text-3xl text-center mb-1 glow-text">{selected.name}</h1>
+                {selected.role && <p className="text-center text-sm text-ink-dim mb-6">{selected.role}</p>}
+
+                {selected.imageIds.length > 0 && (
+                  <div className="flex justify-center mb-8">
+                    <ImageGallery projectId={projectId} imageIds={selected.imageIds} readOnly />
+                  </div>
+                )}
+
+                {selected.traits.length > 0 && (
+                  <div className="flex flex-wrap justify-center gap-1.5 mb-8">
+                    {selected.traits.map((t, i) => (
+                      <span key={i} className="px-2.5 py-1 rounded-full text-xs bg-accent-b/15 text-accent-b">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {selected.abilities.length > 0 && (
+                  <div className="flex flex-col gap-2 mb-8">
+                    {selected.abilities.map((a, i) => (
+                      <div key={i} className="flex gap-2 items-start">
+                        <Sparkle size={14} className="text-accent-c mt-1 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-ink">{a.name || 'Untitled ability'}</p>
+                          {a.description && <p className="text-xs text-ink-dim">{a.description}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <SectionListView sections={selected.sections} />
+              </div>
+            )}
           </div>
         )}
       </div>

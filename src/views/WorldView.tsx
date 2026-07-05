@@ -4,15 +4,18 @@ import { ArrowLeft, ChevronDown, Globe2, Plus, Trash2 } from 'lucide-react'
 import { db, WORLD_CATEGORIES, type WorldEntry } from '@/db'
 import { InlineEditable } from '@/components/common/InlineEditable'
 import { SectionList } from '@/components/common/SectionList'
+import { SectionListView } from '@/components/common/SectionListView'
 import { ImageGallery } from '@/components/common/ImageGallery'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { ModeToggle, type ViewMode } from '@/components/common/ModeToggle'
 
 export function WorldView({ projectId }: { projectId: number }) {
   const entries = useLiveQuery(() => db.worldEntries.where('projectId').equals(projectId).toArray(), [projectId]) ?? []
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState<WorldEntry | null>(null)
+  const [mode, setMode] = useState<ViewMode>('edit')
 
   const grouped = useMemo(() => {
     const map = new Map<string, WorldEntry[]>()
@@ -117,47 +120,70 @@ export function WorldView({ projectId }: { projectId: number }) {
             >
               <ArrowLeft size={13} /> Back to entries
             </button>
-            <div className="flex items-start justify-between mb-1">
-              <InlineEditable
-                value={selected.title}
-                onSave={(v) => db.worldEntries.update(selected.id!, { title: v, updatedAt: Date.now() })}
-                className="font-display text-2xl text-ink"
-                placeholder="Untitled entry"
-              />
-              <button
-                type="button"
-                onClick={() => setDeleting(selected)}
-                className="text-ink-dim hover:text-red-400 transition-colors p-1.5"
-                title="Delete entry"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-            <select
-              value={selected.category}
-              onChange={(e) => db.worldEntries.update(selected.id!, { category: e.target.value, updatedAt: Date.now() })}
-              className="mb-6 bg-bg-elevated border border-panel-border rounded-lg px-2.5 py-1 text-xs text-ink-dim outline-none"
-            >
-              {WORLD_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            {mode === 'edit' ? (
+              <>
+                <div className="flex items-start justify-between mb-1">
+                  <InlineEditable
+                    value={selected.title}
+                    onSave={(v) => db.worldEntries.update(selected.id!, { title: v, updatedAt: Date.now() })}
+                    className="font-display text-2xl text-ink"
+                    placeholder="Untitled entry"
+                  />
+                  <div className="flex items-center gap-1 shrink-0">
+                    <ModeToggle mode={mode} setMode={setMode} />
+                    <button
+                      type="button"
+                      onClick={() => setDeleting(selected)}
+                      className="text-ink-dim hover:text-red-400 transition-colors p-1.5"
+                      title="Delete entry"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+                <select
+                  value={selected.category}
+                  onChange={(e) =>
+                    db.worldEntries.update(selected.id!, { category: e.target.value, updatedAt: Date.now() })
+                  }
+                  className="mb-6 bg-bg-elevated border border-panel-border rounded-lg px-2.5 py-1 text-xs text-ink-dim outline-none"
+                >
+                  {WORLD_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
 
-            <div className="mb-6">
-              <ImageGallery
-                projectId={projectId}
-                imageIds={selected.imageIds}
-                onChange={(ids) => db.worldEntries.update(selected.id!, { imageIds: ids, updatedAt: Date.now() })}
-              />
-            </div>
+                <div className="mb-6">
+                  <ImageGallery
+                    projectId={projectId}
+                    imageIds={selected.imageIds}
+                    onChange={(ids) => db.worldEntries.update(selected.id!, { imageIds: ids, updatedAt: Date.now() })}
+                  />
+                </div>
 
-            <SectionList
-              sections={selected.sections}
-              onChange={(sections) => db.worldEntries.update(selected.id!, { sections, updatedAt: Date.now() })}
-              addLabel="Add section"
-            />
+                <SectionList
+                  sections={selected.sections}
+                  onChange={(sections) => db.worldEntries.update(selected.id!, { sections, updatedAt: Date.now() })}
+                  addLabel="Add section"
+                />
+              </>
+            ) : (
+              <div className="glass rounded-2xl p-6 md:p-10">
+                <div className="flex justify-end mb-2">
+                  <ModeToggle mode={mode} setMode={setMode} />
+                </div>
+                <p className="text-center text-xs uppercase tracking-wide text-ink-dim mb-1">{selected.category}</p>
+                <h1 className="font-display text-3xl text-center mb-6 glow-text">{selected.title}</h1>
+                {selected.imageIds.length > 0 && (
+                  <div className="flex justify-center mb-8">
+                    <ImageGallery projectId={projectId} imageIds={selected.imageIds} readOnly />
+                  </div>
+                )}
+                <SectionListView sections={selected.sections} />
+              </div>
+            )}
           </div>
         )}
       </div>
