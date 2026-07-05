@@ -24,21 +24,27 @@ npm run preview  # preview the production build locally
   convenience lock, not strong security — anyone with disk access to this browser
   profile could still reach the underlying IndexedDB data.
 
-## Deploying privately (so only you can access it)
+## Deployment
 
-Since this is a client-only app (no backend), the recommended setup for solo/private
-use across your devices (desktop + Android phone) is:
+This repo deploys straight from GitHub via **GitHub Pages** — `.github/workflows/deploy.yml`
+builds the app and publishes it on every push to `main`. One-time setup on GitHub:
+Settings → Pages → set **Source** to "GitHub Actions". After that, pushing to `main` is
+all it takes to update the live site.
 
-1. Keep the GitHub repository **private**.
-2. Connect it to **Vercel** or **Netlify** (both can deploy directly from a private
-   repo on the free tier) — every push to your main branch auto-deploys.
-3. You'll get a private, hard-to-guess URL. Open it on your phone and choose
-   "Add to Home Screen" to install it like a native app (it's a PWA).
-4. Optionally set a passcode in-app (Settings) as a second layer of casual protection.
+Note on privacy: keeping the repository **private** hides the source code, but a
+published GitHub Pages site itself is always reachable at its URL — GitHub only offers
+private Pages sites on Enterprise Cloud, not on individual/Pro accounts. That's low-risk
+here since this is a client-only app: your actual projects/characters/chapters live only
+in your own browser's IndexedDB, never in the repo or on the host. Anyone who found the
+URL would just see an empty app shell, not your content — and the in-app passcode lock
+(Settings) adds a further deterrent. If you ever want the *site* itself gated too (not
+just the source), Vercel/Netlify support private deployments and can be swapped in
+instead of Pages.
 
-Your project data itself never lives in the repo or on the host — it's local to each
-browser you use the app in, so remember to use the backup/restore feature if you want
-the same projects available on multiple devices.
+Once deployed, open the URL on your phone and choose "Add to Home Screen" to install it
+like a native app (it's a PWA). Your project data itself never lives in the repo or on
+the host — it's local to each browser you use the app in, so remember to use the
+backup/restore feature if you want the same projects available on multiple devices.
 
 ## Tech stack
 
