@@ -175,6 +175,7 @@ export function ChaptersView({ projectId }: { projectId: number }) {
                   content={selected[contentField]}
                   onChange={(json) => db.chapters.update(selected.id!, { [contentField]: json, updatedAt: Date.now() })}
                   placeholder={version === 'draft' ? 'Draft your chapter…' : 'Write the official version…'}
+                  projectId={projectId}
                 />
               ) : (
                 <div className="glass rounded-2xl p-10">

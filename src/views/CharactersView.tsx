@@ -252,6 +252,7 @@ export function CharactersView({ projectId }: { projectId: number }) {
                   sections={selected.sections}
                   onChange={(sections) => patch({ sections })}
                   addLabel="Add section"
+                  projectId={projectId}
                 />
               </>
             ) : (

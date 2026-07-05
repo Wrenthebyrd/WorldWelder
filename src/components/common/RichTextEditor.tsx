@@ -11,14 +11,19 @@ import {
   List,
   ListOrdered,
   Quote,
+  ImagePlus,
   Undo2,
   Redo2,
 } from 'lucide-react'
+import { db } from '@/db'
+import { prepareImageForStorage } from '@/lib/imageProcessing'
+import { StoredImageExtension } from '@/lib/storedImageExtension'
 
 interface RichTextEditorProps {
   content: string
   onChange: (json: string) => void
   placeholder?: string
+  projectId: number
 }
 
 function ToolbarButton({
@@ -50,13 +55,15 @@ function ToolbarButton({
   )
 }
 
-export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
+export function RichTextEditor({ content, onChange, placeholder, projectId }: RichTextEditorProps) {
   const debounceRef = useRef<number | undefined>(undefined)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder: placeholder ?? 'Begin writing…' }),
+      StoredImageExtension,
     ],
     content: safeParse(content),
     onUpdate: ({ editor }) => {
@@ -70,6 +77,13 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   useEffect(() => {
     return () => window.clearTimeout(debounceRef.current)
   }, [])
+
+  async function handleInsertImage(file: File | undefined) {
+    if (!file || !editor) return
+    const blob = await prepareImageForStorage(file)
+    const imageId = await db.images.add({ projectId, name: file.name, mimeType: blob.type || file.type, blob })
+    editor.chain().focus().insertStoredImage(imageId).run()
+  }
 
   if (!editor) return null
 
@@ -134,6 +148,20 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         >
           <Quote size={15} />
         </ToolbarButton>
+        <div className="w-px h-5 bg-panel-border mx-1" />
+        <ToolbarButton label="Insert image" onClick={() => fileInputRef.current?.click()}>
+          <ImagePlus size={15} />
+        </ToolbarButton>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            handleInsertImage(e.target.files?.[0])
+            e.target.value = ''
+          }}
+        />
         <div className="w-px h-5 bg-panel-border mx-1" />
         <ToolbarButton label="Undo" onClick={() => editor.chain().focus().undo().run()}>
           <Undo2 size={15} />

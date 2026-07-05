@@ -9,9 +9,10 @@ interface SectionListProps {
   sections: EntrySection[]
   onChange: (sections: EntrySection[]) => void
   addLabel?: string
+  projectId: number
 }
 
-export function SectionList({ sections, onChange, addLabel = 'Add section' }: SectionListProps) {
+export function SectionList({ sections, onChange, addLabel = 'Add section', projectId }: SectionListProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [dragId, setDragId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<EntrySection | null>(null)
@@ -98,6 +99,7 @@ export function SectionList({ sections, onChange, addLabel = 'Add section' }: Se
                   content={section.content}
                   onChange={(json) => updateSection(section.id, { content: json })}
                   placeholder="Write this section…"
+                  projectId={projectId}
                 />
               </div>
             )}

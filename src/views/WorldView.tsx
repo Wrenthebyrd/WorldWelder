@@ -167,6 +167,7 @@ export function WorldView({ projectId }: { projectId: number }) {
                   sections={selected.sections}
                   onChange={(sections) => db.worldEntries.update(selected.id!, { sections, updatedAt: Date.now() })}
                   addLabel="Add section"
+                  projectId={projectId}
                 />
               </>
             ) : (

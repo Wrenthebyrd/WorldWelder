@@ -4,11 +4,12 @@ export interface TextRun {
   italic?: boolean
 }
 
-export type BlockKind = 'h1' | 'h2' | 'h3' | 'p' | 'li' | 'oli' | 'blockquote' | 'hr'
+export type BlockKind = 'h1' | 'h2' | 'h3' | 'p' | 'li' | 'oli' | 'blockquote' | 'hr' | 'image'
 
 export interface Block {
   kind: BlockKind
   runs: TextRun[]
+  imageId?: number
 }
 
 interface TTNode {
@@ -88,6 +89,9 @@ export function docToBlocks(jsonString: string): Block[] {
       case 'horizontalRule':
         blocks.push({ kind: 'hr', runs: [] })
         break
+      case 'storedImage':
+        blocks.push({ kind: 'image', runs: [], imageId: node.attrs?.imageId as number | undefined })
+        break
       default:
         break
     }
@@ -104,6 +108,7 @@ export function blocksToPlainText(blocks: Block[]): string {
       if (b.kind === 'li') return `  • ${text}`
       if (b.kind === 'oli') return `  - ${text}`
       if (b.kind === 'hr') return '―――――'
+      if (b.kind === 'image') return '[image]'
       return text
     })
     .join('\n\n')

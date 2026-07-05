@@ -134,6 +134,9 @@ export const db = new WorldWelderDB()
 export const WORLD_CATEGORIES = [
   'Locations',
   'Factions',
+  'Races',
+  'Creatures',
+  'Concepts',
   'Lore & History',
   'Magic & Technology',
   'Timeline',

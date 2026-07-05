@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import { docToBlocks, type Block, type TextRun } from '@/lib/richtext'
+import { StoredImage } from './StoredImage'
 
 function Runs({ runs }: { runs: TextRun[] }) {
   return (
@@ -36,7 +37,8 @@ export function RichTextView({ content, className = '' }: { content: string; cla
   const blocks = docToBlocks(content)
   const groups = groupBlocks(blocks)
 
-  if (blocks.length === 0 || (blocks.length === 1 && blocks[0].runs.length === 0)) {
+  const hasContent = blocks.some((b) => b.runs.length > 0 || b.imageId)
+  if (!hasContent) {
     return <p className="text-ink-dim italic text-sm">Nothing written yet.</p>
   }
 
@@ -82,6 +84,8 @@ export function RichTextView({ content, className = '' }: { content: string; cla
             )
           case 'hr':
             return <hr key={i} />
+          case 'image':
+            return <StoredImage key={i} imageId={g.imageId} className="my-4 mx-auto block" />
           default:
             return (
               <p key={i}>
