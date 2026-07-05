@@ -62,6 +62,9 @@ export interface ImageAsset {
   name: string
   mimeType: string
   blob: Blob
+  // Crop focal point as a percentage (CSS object-position), 0-100. Defaults to centered (50/50).
+  posX?: number
+  posY?: number
 }
 
 export interface Settings {

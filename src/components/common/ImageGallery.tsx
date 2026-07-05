@@ -1,8 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ImagePlus, X } from 'lucide-react'
 import { db, type ImageAsset } from '@/db'
 import { prepareImageForStorage } from '@/lib/imageProcessing'
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n))
+}
+
+interface DragState {
+  startX: number
+  startY: number
+  origX: number
+  origY: number
+  width: number
+  height: number
+  moved: boolean
+  currentX: number
+  currentY: number
+}
 
 function Thumb({
   image,
@@ -14,6 +30,14 @@ function Thumb({
   readOnly?: boolean
 }) {
   const [url, setUrl] = useState<string | null>(null)
+  const [pos, setPos] = useState({ x: image.posX ?? 50, y: image.posY ?? 50 })
+  const [dragging, setDragging] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<DragState | null>(null)
+
+  useEffect(() => {
+    setPos({ x: image.posX ?? 50, y: image.posY ?? 50 })
+  }, [image.posX, image.posY])
 
   useEffect(() => {
     const objectUrl = URL.createObjectURL(image.blob)
@@ -21,13 +45,68 @@ function Thumb({
     return () => URL.revokeObjectURL(objectUrl)
   }, [image.blob])
 
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (readOnly) return
+    if ((e.target as HTMLElement).closest('button')) return
+    const rect = containerRef.current!.getBoundingClientRect()
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: pos.x,
+      origY: pos.y,
+      width: rect.width,
+      height: rect.height,
+      moved: false,
+      currentX: pos.x,
+      currentY: pos.y,
+    }
+    containerRef.current!.setPointerCapture(e.pointerId)
+    setDragging(true)
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current
+    if (!drag) return
+    const dxPct = ((e.clientX - drag.startX) / drag.width) * 100
+    const dyPct = ((e.clientY - drag.startY) / drag.height) * 100
+    if (Math.abs(dxPct) > 1 || Math.abs(dyPct) > 1) drag.moved = true
+    const nextX = clamp(drag.origX - dxPct, 0, 100)
+    const nextY = clamp(drag.origY - dyPct, 0, 100)
+    drag.currentX = nextX
+    drag.currentY = nextY
+    setPos({ x: nextX, y: nextY })
+  }
+
+  async function handlePointerUp() {
+    const drag = dragRef.current
+    dragRef.current = null
+    setDragging(false)
+    if (!drag || !drag.moved) return
+    await db.images.update(image.id!, { posX: drag.currentX, posY: drag.currentY })
+  }
+
   return (
     <div
+      ref={containerRef}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       className={`relative group rounded-xl overflow-hidden glass shrink-0 ${
         readOnly ? 'w-36 h-36' : 'w-24 h-24'
-      }`}
+      } ${!readOnly ? (dragging ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
+      style={{ touchAction: readOnly ? undefined : 'none' }}
+      title={readOnly ? undefined : 'Drag to reposition'}
     >
-      {url && <img src={url} alt={image.name} className="w-full h-full object-cover" />}
+      {url && (
+        <img
+          src={url}
+          alt={image.name}
+          draggable={false}
+          className="w-full h-full object-cover select-none pointer-events-none"
+          style={{ objectPosition: `${pos.x}% ${pos.y}%` }}
+        />
+      )}
       {!readOnly && (
         <button
           type="button"
