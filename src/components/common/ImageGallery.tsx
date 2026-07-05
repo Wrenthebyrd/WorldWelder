@@ -1,0 +1,76 @@
+import { useEffect, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { ImagePlus, X } from 'lucide-react'
+import { db, type ImageAsset } from '@/db'
+
+function Thumb({ image, onRemove }: { image: ImageAsset; onRemove: () => void }) {
+  const [url, setUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(image.blob)
+    setUrl(objectUrl)
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [image.blob])
+
+  return (
+    <div className="relative group w-24 h-24 rounded-xl overflow-hidden glass shrink-0">
+      {url && <img src={url} alt={image.name} className="w-full h-full object-cover" />}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label={`Remove ${image.name}`}
+      >
+        <X size={13} />
+      </button>
+    </div>
+  )
+}
+
+interface ImageGalleryProps {
+  projectId: number
+  imageIds: number[]
+  onChange: (ids: number[]) => void
+}
+
+export function ImageGallery({ projectId, imageIds, onChange }: ImageGalleryProps) {
+  const images = useLiveQuery(async () => {
+    if (imageIds.length === 0) return []
+    const results = await db.images.bulkGet(imageIds)
+    return results.filter((r): r is ImageAsset => !!r)
+  }, [imageIds])
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return
+    const newIds: number[] = []
+    for (const file of Array.from(files)) {
+      const id = await db.images.add({ projectId, name: file.name, mimeType: file.type, blob: file })
+      newIds.push(id)
+    }
+    onChange([...imageIds, ...newIds])
+  }
+
+  async function handleRemove(id: number) {
+    onChange(imageIds.filter((i) => i !== id))
+    await db.images.delete(id)
+  }
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      {(images ?? []).map((img) => (
+        <Thumb key={img.id} image={img} onRemove={() => handleRemove(img.id!)} />
+      ))}
+      <label className="w-24 h-24 rounded-xl border-2 border-dashed border-panel-border flex flex-col items-center justify-center gap-1 cursor-pointer text-ink-dim hover:text-accent-a hover:border-accent-a/50 transition-colors shrink-0">
+        <ImagePlus size={20} />
+        <span className="text-[10px]">Add image</span>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+      </label>
+    </div>
+  )
+}

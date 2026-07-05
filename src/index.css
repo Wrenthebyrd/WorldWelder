@@ -1,0 +1,178 @@
+@import "tailwindcss";
+@import "@fontsource/cinzel/500.css";
+@import "@fontsource/cinzel/600.css";
+@import "@fontsource/space-grotesk/400.css";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/600.css";
+@import "@fontsource/space-grotesk/700.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f3f1ec;
+  --bg-elevated: #ffffff;
+  --panel: rgba(255, 255, 255, 0.6);
+  --panel-border: rgba(30, 20, 60, 0.1);
+  --text: #211c31;
+  --text-dim: #625c78;
+  --accent-a: #7c3aed;
+  --accent-b: #06b6d4;
+  --accent-c: #ec4899;
+  --glow: rgba(124, 58, 237, 0.18);
+  --shadow: 0 10px 30px -10px rgba(40, 20, 80, 0.18);
+}
+
+.dark {
+  --bg: #090b14;
+  --bg-elevated: #10131f;
+  --panel: rgba(20, 22, 38, 0.55);
+  --panel-border: rgba(160, 140, 255, 0.14);
+  --text: #eef0fb;
+  --text-dim: #9aa0c3;
+  --accent-a: #a78bfa;
+  --accent-b: #22d3ee;
+  --accent-c: #f472b6;
+  --glow: rgba(124, 58, 237, 0.35);
+  --shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.6);
+}
+
+@theme inline {
+  --font-display: "Cinzel", serif;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-panel: var(--panel);
+  --color-panel-border: var(--panel-border);
+  --color-ink: var(--text);
+  --color-ink-dim: var(--text-dim);
+  --color-accent-a: var(--accent-a);
+  --color-accent-b: var(--accent-b);
+  --color-accent-c: var(--accent-c);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, var(--glow), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(6, 182, 212, 0.12), transparent 60%);
+}
+
+::selection {
+  background: var(--accent-a);
+  color: white;
+}
+
+.glass {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+}
+
+.glow-text {
+  background: linear-gradient(90deg, var(--accent-a), var(--accent-b) 50%, var(--accent-c));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rune-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.rune-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--panel-border);
+  border-radius: 999px;
+}
+.rune-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ProseMirror {
+  outline: none;
+  min-height: 100%;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-dim);
+  opacity: 0.6;
+  pointer-events: none;
+  height: 0;
+}
+
+.prose-area .ProseMirror,
+.final-layout {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text);
+  max-width: 68ch;
+  margin: 0 auto;
+}
+
+.prose-area h1,
+.final-layout h1 {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  margin: 1.4em 0 0.5em;
+  color: var(--text);
+}
+.prose-area h2,
+.final-layout h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 1.2em 0 0.5em;
+  color: var(--text);
+}
+.prose-area h3,
+.final-layout h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 1em 0 0.4em;
+  color: var(--text);
+}
+.prose-area p,
+.final-layout p {
+  margin: 0 0 1em;
+}
+.prose-area ul,
+.prose-area ol,
+.final-layout ul,
+.final-layout ol {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+}
+.final-layout blockquote,
+.prose-area blockquote {
+  border-left: 3px solid var(--accent-a);
+  padding-left: 1em;
+  margin: 0 0 1em;
+  color: var(--text-dim);
+  font-style: italic;
+}
+.final-layout hr,
+.prose-area hr {
+  border: none;
+  border-top: 1px solid var(--panel-border);
+  margin: 2em 0;
+}
