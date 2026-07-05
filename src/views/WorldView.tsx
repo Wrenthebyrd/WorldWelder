@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowLeft, ChevronDown, Globe2, Plus, Trash2 } from 'lucide-react'
-import { db, emptyDoc, WORLD_CATEGORIES, type WorldEntry } from '@/db'
+import { db, WORLD_CATEGORIES, type WorldEntry } from '@/db'
 import { InlineEditable } from '@/components/common/InlineEditable'
-import { RichTextEditor } from '@/components/common/RichTextEditor'
+import { SectionList } from '@/components/common/SectionList'
 import { ImageGallery } from '@/components/common/ImageGallery'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
@@ -31,7 +31,7 @@ export function WorldView({ projectId }: { projectId: number }) {
       projectId,
       category,
       title: 'New entry',
-      content: emptyDoc(),
+      sections: [],
       imageIds: [],
       updatedAt: Date.now(),
     })
@@ -153,13 +153,11 @@ export function WorldView({ projectId }: { projectId: number }) {
               />
             </div>
 
-            <div style={{ minHeight: 300 }}>
-              <RichTextEditor
-                content={selected.content}
-                onChange={(json) => db.worldEntries.update(selected.id!, { content: json, updatedAt: Date.now() })}
-                placeholder="Describe this piece of your world…"
-              />
-            </div>
+            <SectionList
+              sections={selected.sections}
+              onChange={(sections) => db.worldEntries.update(selected.id!, { sections, updatedAt: Date.now() })}
+              addLabel="Add section"
+            />
           </div>
         )}
       </div>

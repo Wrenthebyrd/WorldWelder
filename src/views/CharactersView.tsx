@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowLeft, Users, Plus, Trash2, X, Sparkle } from 'lucide-react'
-import { db, emptyDoc, type Character, type Ability } from '@/db'
+import { db, type Character, type Ability } from '@/db'
 import { InlineEditable } from '@/components/common/InlineEditable'
-import { RichTextEditor } from '@/components/common/RichTextEditor'
+import { SectionList } from '@/components/common/SectionList'
 import { ImageGallery } from '@/components/common/ImageGallery'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
@@ -58,7 +58,7 @@ export function CharactersView({ projectId }: { projectId: number }) {
       name: 'New character',
       aliases: '',
       role: '',
-      background: emptyDoc(),
+      sections: [],
       abilities: [],
       traits: [],
       imageIds: [],
@@ -239,14 +239,12 @@ export function CharactersView({ projectId }: { projectId: number }) {
               ))}
             </div>
 
-            <label className="block text-xs text-ink-dim mb-1.5">Background</label>
-            <div style={{ minHeight: 260 }}>
-              <RichTextEditor
-                content={selected.background}
-                onChange={(json) => patch({ background: json })}
-                placeholder="Their history, motivations, secrets…"
-              />
-            </div>
+            <label className="block text-xs text-ink-dim mb-1.5">Profile sections</label>
+            <SectionList
+              sections={selected.sections}
+              onChange={(sections) => patch({ sections })}
+              addLabel="Add section"
+            />
           </div>
         )}
       </div>

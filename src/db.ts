@@ -27,13 +27,19 @@ export interface Ability {
   description: string
 }
 
+export interface EntrySection {
+  id: string
+  title: string
+  content: string
+}
+
 export interface Character {
   id?: number
   projectId: number
   name: string
   aliases: string
   role: string
-  background: string
+  sections: EntrySection[]
   abilities: Ability[]
   traits: string[]
   imageIds: number[]
@@ -45,7 +51,7 @@ export interface WorldEntry {
   projectId: number
   category: string
   title: string
-  content: string
+  sections: EntrySection[]
   imageIds: number[]
   updatedAt: number
 }
@@ -86,6 +92,40 @@ class WorldWelderDB extends Dexie {
       images: '++id, projectId',
       settings: '++id',
     })
+
+    this.version(2)
+      .stores({
+        projects: '++id, order',
+        chapters: '++id, projectId, order',
+        characters: '++id, projectId',
+        worldEntries: '++id, projectId, category',
+        images: '++id, projectId',
+        settings: '++id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('worldEntries')
+          .toCollection()
+          .modify((entry: WorldEntry & { content?: string }) => {
+            if (!entry.sections) {
+              entry.sections = entry.content
+                ? [{ id: crypto.randomUUID(), title: 'Overview', content: entry.content }]
+                : []
+            }
+            delete entry.content
+          })
+        await tx
+          .table('characters')
+          .toCollection()
+          .modify((char: Character & { background?: string }) => {
+            if (!char.sections) {
+              char.sections = char.background
+                ? [{ id: crypto.randomUUID(), title: 'Background', content: char.background }]
+                : []
+            }
+            delete char.background
+          })
+      })
   }
 }
 
@@ -139,4 +179,8 @@ export async function deleteProjectCascade(projectId: number): Promise<void> {
 
 export function emptyDoc(): string {
   return JSON.stringify({ type: 'doc', content: [{ type: 'paragraph' }] })
+}
+
+export function newSection(title = 'New section'): EntrySection {
+  return { id: crypto.randomUUID(), title, content: emptyDoc() }
 }
